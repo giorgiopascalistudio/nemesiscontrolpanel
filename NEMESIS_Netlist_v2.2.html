@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEMESIS — Netlist & Schemi Tecnici v2.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --panel: #0d1318;
+    --border: #1a2a38;
+    --accent: #00e5ff;
+    --accent2: #ff3a3a;
+    --accent3: #ffd600;
+    --green: #00ff88;
+    --dim: #2a3a4a;
+    --text: #c8dde8;
+    --text-dim: #5a7a8a;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Orbitron', sans-serif;
+    --body: 'Rajdhani', sans-serif;
+    --glow: 0 0 8px rgba(0,229,255,0.4);
+    --glow2: 0 0 8px rgba(255,58,58,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* SCANLINE overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    padding: 40px 40px 30px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0a1520 0%, var(--bg) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: 'NEMESIS';
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    font-family: var(--head);
+    font-size: 140px;
+    font-weight: 900;
+    color: rgba(0,229,255,0.03);
+    letter-spacing: -5px;
+    user-select: none;
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: var(--head);
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,229,255,0.3);
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  .dot.warn { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+  .dot.err { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+
+  /* NAV */
+  nav {
+    display: flex;
+    gap: 0;
+    padding: 0 40px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--panel);
+  }
+  nav::-webkit-scrollbar { display:none; }
+
+  nav a {
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+  }
+
+  /* WARNING BANNER */
+  .alert {
+    border: 1px solid var(--accent3);
+    background: rgba(255,214,0,0.05);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .alert-icon { color: var(--accent3); font-size: 18px; flex-shrink:0; margin-top: 1px; }
+  .alert-text { font-family: var(--mono); font-size: 12px; color: var(--accent3); line-height: 1.7; }
+  .alert-text strong { color: #fff; }
+
+  .alert.danger { border-color: var(--accent2); background: rgba(255,58,58,0.05); }
+  .alert.danger .alert-icon, .alert.danger .alert-text { color: var(--accent2); }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 60px;
+  }
+
+  .section-title {
+    font-family: var(--head);
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  /* OVERVIEW TABLE */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .comp-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .comp-card:hover { border-color: var(--dim); }
+  .comp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+  .comp-card.power::before { background: var(--accent2); }
+  .comp-card.motor::before { background: var(--accent3); }
+  .comp-card.aeg::before { background: var(--green); }
+  .comp-card.passive::before { background: var(--text-dim); }
+
+  .comp-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .comp-name {
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .comp-role {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* WIRING TABLE */
+  .wire-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .wire-table thead tr {
+    background: rgba(0,229,255,0.05);
+    border-bottom: 1px solid var(--border);
+  }
+  .wire-table th {
+    padding: 10px 14px;
+    text-align: left;
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .wire-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(26,42,56,0.6);
+    vertical-align: middle;
+  }
+  .wire-table tr:last-child td { border-bottom: none; }
+  .wire-table tr:hover td { background: rgba(0,229,255,0.03); }
+
+  .pin-badge {
+    display: inline-block;
+    background: var(--dim);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 7px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .pin-badge.power { color: var(--accent2); border-color: rgba(255,58,58,0.3); background: rgba(255,58,58,0.08); }
+  .pin-badge.gnd { color: #888; border-color: #333; background: rgba(0,0,0,0.3); }
+  .pin-badge.signal { color: var(--green); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+  .pin-badge.passive { color: var(--accent3); border-color: rgba(255,214,0,0.3); background: rgba(255,214,0,0.06); }
+  .pin-badge.lipo { color: #ff8c00; border-color: rgba(255,140,0,0.3); background: rgba(255,140,0,0.08); }
+
+  .arrow {
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 0 4px;
+  }
+
+  .wire-from, .wire-to {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .note-cell {
+    color: var(--text-dim);
+    font-size: 11px;
+    font-style: italic;
+  }
+  .note-cell.warn { color: var(--accent3); }
+  .note-cell.ok { color: var(--green); }
+  .note-cell.critical { color: var(--accent2); }
+
+  /* SCHEMATIC DIAGRAMS */
+  .schematics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+  }
+
+  .schematic-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .schematic-header {
+    padding: 14px 18px;
+    background: rgba(0,229,255,0.04);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .schematic-header.power { background: rgba(255,58,58,0.04); }
+  .schematic-header.motor { background: rgba(255,214,0,0.04); }
+  .schematic-header.aeg { background: rgba(0,255,136,0.04); }
+
+  .schematic-header-left { display: flex; align-items: center; gap: 10px; }
+  .schematic-id { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 2px; }
+  .schematic-name { font-family: var(--body); font-size: 15px; font-weight: 700; color: #fff; }
+  .schematic-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+  }
+  .schematic-badge.power { background: rgba(255,58,58,0.1); color: var(--accent2); border-color: rgba(255,58,58,0.2); }
+  .schematic-badge.motor { background: rgba(255,214,0,0.1); color: var(--accent3); border-color: rgba(255,214,0,0.2); }
+  .schematic-badge.aeg { background: rgba(0,255,136,0.1); color: var(--green); border-color: rgba(0,255,136,0.2); }
+
+  .schematic-body {
+    padding: 20px;
+  }
+
+  svg.diagram {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* PASSIVE COMPONENTS BOX */
+  .passives-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .passives-header {
+    padding: 14px 18px;
+    background: rgba(255,214,0,0.04);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .passives-header span { font-family: var(--body); font-weight:700; color:#fff; font-size:15px; }
+  .passives-header small { font-family: var(--mono); font-size:10px; color: var(--text-dim); letter-spacing:2px; }
+  .passives-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0;
+  }
+  .passive-item {
+    padding: 14px 18px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .passive-item:nth-child(3n) { border-right: none; }
+  .passive-ref { font-family: var(--mono); font-size: 10px; color: var(--accent3); letter-spacing:1px; margin-bottom:3px; }
+  .passive-desc { font-family: var(--body); font-size: 13px; font-weight:600; color: #fff; margin-bottom:2px; }
+  .passive-note { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+  /* FOOTER */
+  footer {
+    padding: 30px 40px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+  }
+  footer span { color: var(--accent); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    header, main, footer { padding-left: 20px; padding-right: 20px; }
+    nav { padding: 0 20px; }
+    .schematics-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Tabs */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">// PROGETTO AIRSOFT TURRET — DOCUMENTAZIONE TECNICA</div>
+  <h1>NEM<span>E</span>SIS <span style="font-size:18px;opacity:0.5">v2.2</span></h1>
+  <div class="subtitle">NETLIST COMPLETA · SCHEMI COMPONENTI · CABLAGGIO CON PASSIVI · rev. APR 2025</div>
+  <div class="status-bar">
+    <div class="status-item"><div class="dot"></div> GPIO OK — IRLZ44N (logic-level)</div>
+    <div class="status-item"><div class="dot"></div> AEG → SERVO SG90 grilletto</div>
+    <div class="status-item"><div class="dot warn"></div> LiPo 7.4V separata per AEG</div>
+    <div class="status-item"><div class="dot warn"></div> Slip Ring 12ch allocati</div>
+    <div class="status-item"><div class="dot err"></div> IRF520N RIMOSSO (non logica 3.3V)</div>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview" class="active" onclick="showTab('overview',this)">Panoramica</a>
+  <a href="#passives" onclick="showTab('passives',this)">Componenti Passivi</a>
+  <a href="#wiring" onclick="showTab('wiring',this)">Netlist Completa</a>
+  <a href="#schematics" onclick="showTab('schematics',this)">Schemi Tecnici</a>
+  <a href="#slipring" onclick="showTab('slipring',this)">Slip Ring</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ OVERVIEW -->
+<div id="tab-overview" class="tab-content active">
+  <div class="section" style="margin-top:32px">
+
+    <div class="alert danger" style="margin-top:0">
+      <div class="alert-icon">⚠</div>
+      <div class="alert-text">
+        <strong>MODIFICA CRITICA v2.2:</strong> IRF520N rimosso — non è un MOSFET logic-level, la sua Vgs_th (2–4V) non è pilotabile dai 3.3V GPIO del Pi.<br>
+        <strong>SOSTITUITO con IRLZ44N</strong> (Vgs_th ≈ 1V, saturazione completa a 3.3V) per il controllo del servo servo-driver.<br>
+        <strong>GRILLETTO AEG:</strong> Il motore high-torque AEG viene azionato da un <strong>Servo SG90/MG90S</strong> che clicca fisicamente il grilletto — separazione galvanica totale tra circuiti 3.3V Pi e circuito LiPo 7.4V AEG.
+      </div>
+    </div>
+
+    <div class="alert">
+      <div class="alert-icon">ℹ</div>
+      <div class="alert-text">
+        <strong>ALIMENTAZIONI SEPARATE:</strong> Il sistema usa 3 domini di tensione indipendenti.<br>
+        [1] <strong>LiFePO4 12V 5Ah</strong> → Step-down 5V → Pi + logica + driver steppers.<br>
+        [2] <strong>12V diretta</strong> → A4988 VMOT × 2 → NEMA 17 PAN + TILT.<br>
+        [3] <strong>LiPo 7.4V 20C separata</strong> → Diretto al motore AEG (nessun collegamento con il Pi). Il Pi controlla solo il servo grilletto tramite GPIO18 PWM.
+      </div>
+    </div>
+
+    <div class="section-title">Componenti del sistema</div>
+
+    <div class="overview-grid">
+      <div class="comp-card"><div class="comp-id">C01</div><div class="comp-name">Raspberry Pi 5 8GB</div><div class="comp-role">CERVELLO — FastAPI, WebSocket, MJPEG, AI</div></div>
+      <div class="comp-card"><div class="comp-id">C02</div><div class="comp-name">Camera Module 3</div><div class="comp-role">CERVELLO — CSI 22-pin, visione artificiale</div></div>
+      <div class="comp-card"><div class="comp-id">C03</div><div class="comp-name">MicroSD 64GB A2</div><div class="comp-role">CERVELLO — OS + software</div></div>
+      <div class="comp-card power"><div class="comp-id">P01</div><div class="comp-name">Step-down 12V→5V 5A</div><div class="comp-role">ALIMENTAZIONE — regolatore DC-DC</div></div>
+      <div class="comp-card power"><div class="comp-id">P02</div><div class="comp-name">Batteria LiFePO4 12V 5Ah</div><div class="comp-role">ALIMENTAZIONE — principale</div></div>
+      <div class="comp-card power"><div class="comp-id">P03</div><div class="comp-name">Fusibile 10A inline</div><div class="comp-role">ALIMENTAZIONE — protezione</div></div>
+      <div class="comp-card motor"><div class="comp-id">M01</div><div class="comp-name">A4988 Driver PAN</div><div class="comp-role">MOTORI — stepper driver</div></div>
+      <div class="comp-card motor"><div class="comp-id">M02</div><div class="comp-name">A4988 Driver TILT</div><div class="comp-role">MOTORI — stepper driver</div></div>
+      <div class="comp-card motor"><div class="comp-id">N01</div><div class="comp-name">NEMA 17 — PAN 360°</div><div class="comp-role">MOTORI — rotazione orizzontale</div></div>
+      <div class="comp-card motor"><div class="comp-id">N02</div><div class="comp-name">NEMA 17 — TILT ±45°</div><div class="comp-role">MOTORI — elevazione verticale</div></div>
+      <div class="comp-card motor"><div class="comp-id">N03</div><div class="comp-name">Slip Ring 12 canali 2A</div><div class="comp-role">MOTORI — rotazione continua</div></div>
+      <div class="comp-card aeg"><div class="comp-id">A02</div><div class="comp-name">Servo SG90/MG90S</div><div class="comp-role">AEG — attuatore grilletto (PWM GPIO18)</div></div>
+      <div class="comp-card aeg"><div class="comp-id">A03</div><div class="comp-name">Motore AEG High Torque</div><div class="comp-role">AEG — motore interno airsoft</div></div>
+      <div class="comp-card aeg"><div class="comp-id">A04</div><div class="comp-name">LiPo 7.4V 20C</div><div class="comp-role">AEG — batteria dedicata airsoft</div></div>
+      <div class="comp-card passive"><div class="comp-id">ES1</div><div class="comp-name">Endstop PAN (GPIO5)</div><div class="comp-role">SENSORI — fine corsa meccanico</div></div>
+      <div class="comp-card passive"><div class="comp-id">ES2</div><div class="comp-name">Endstop TILT (GPIO6)</div><div class="comp-role">SENSORI — fine corsa meccanico</div></div>
+      <div class="comp-card passive"><div class="comp-id">L01</div><div class="comp-name">LED Rosso × 2</div><div class="comp-role">INDICATORI — stato sistema</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ PASSIVES -->
+<div id="tab-passives" class="tab-content">
+  <div class="section" style="margin-top:32px">
+    <div class="section-title">Componenti passivi necessari</div>
+
+    <div class="passives-box">
+      <div class="passives-header">
+        <span>Lista BOM — Passivi</span>
+        <small>TUTTI OBBLIGATORI</small>
+      </div>
+      <div class="passives-grid">
+        <div class="passive-item">
+          <div class="passive-ref">R1 — R2</div>
+          <div class="passive-desc">Resistenza 10kΩ × 2</div>
+          <div class="passive-note">Pull-down endstop PAN + TILT</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">C1 — C2</div>
+          <div class="passive-desc">Condensatore 100µF 25V × 2</div>
+          <div class="passive-note">Decoupling A4988 VMOT (uno per driver)</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">C3 — C4</div>
+          <div class="passive-desc">Condensatore 100nF × 2</div>
+          <div class="passive-note">Decoupling A4988 VDD logica</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">C5</div>
+          <div class="passive-desc">Condensatore 1000µF 16V</div>
+          <div class="passive-note">Bulk cap uscita step-down 5V</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">C6</div>
+          <div class="passive-desc">Condensatore 100µF 16V</div>
+          <div class="passive-note">Filtro LiPo AEG (protezione spike)</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">D1</div>
+          <div class="passive-desc">Diodo Schottky 1N5819</div>
+          <div class="passive-note">Flyback AEG motore brushed</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">R3 — R4</div>
+          <div class="passive-desc">Resistenza 330Ω × 2</div>
+          <div class="passive-note">Limitatore corrente LED × 2</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">VR1 — VR2</div>
+          <div class="passive-desc">Trimmer A4988 × 2</div>
+          <div class="passive-note">Vref: Ilim = Vref / (8 × Rs)</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">F1</div>
+          <div class="passive-desc">Fusibile 3A AEG inline</div>
+          <div class="passive-note">Protezione circuito LiPo AEG</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">MS1/MS2</div>
+          <div class="passive-desc">Jumper MS1+MS2+MS3 × 2</div>
+          <div class="passive-note">Microstepping 1/16: tutti HIGH</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">CN1</div>
+          <div class="passive-desc">Connettore XT60</div>
+          <div class="passive-note">Batteria principale LiFePO4</div>
+        </div>
+        <div class="passive-item">
+          <div class="passive-ref">CN2</div>
+          <div class="passive-desc">Connettore XT30 / Mini Tamiya</div>
+          <div class="passive-note">LiPo AEG 7.4V</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Servo info -->
+    <div class="passives-box">
+      <div class="passives-header">
+        <span>Servo Grilletto — SG90 / MG90S</span>
+        <small>PILOTAGGIO PWM</small>
+      </div>
+      <div style="padding:18px 18px; font-family:var(--mono); font-size:12px; color:var(--text); line-height:2;">
+        GPIO18 (hardware PWM su Pi) → segnale 50Hz<br>
+        Posizione RILASCIATO: duty cycle 5% → polso ~1ms (0°)<br>
+        Posizione SPARATO: duty cycle 10% → polso ~2ms (90°)<br>
+        Alimentazione servo: 5V dal Pi (pin fisico 2 o 4) → max 500mA OK per SG90<br>
+        Per MG90S con carico meccanico elevato → alimentazione 5V esterna dallo step-down<br>
+        <span style="color:var(--green)">✔ Isolamento galvanico completo: il Pi non tocca mai i 7.4V LiPo</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ WIRING -->
+<div id="tab-wiring" class="tab-content">
+  <div class="section" style="margin-top:32px">
+    <div class="section-title">Netlist Completa — tutti i collegamenti</div>
+
+    <!-- ALIMENTAZIONE -->
+    <div class="section-title" style="font-size:11px; color: var(--accent2); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--accent2);box-shadow:var(--glow2)"></div>
+      DOMINIO 1 — Alimentazione principale 12V / 5V
+    </div>
+    <table class="wire-table" style="margin-bottom:28px">
+      <thead><tr><th>Da</th><th></th><th>A</th><th>Passivo</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">P02-B01</span><span style="font-size:10px;color:var(--text-dim)">XT60+</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge power">P03-C01</span><span style="font-size:10px;color:var(--text-dim)">Fusibile IN</span></div></td>
+          <td><span class="pin-badge passive">F1 · 10A</span></td>
+          <td class="note-cell">Positivo batteria → fusibile protezione</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">P03-C02</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge power">P01-A01</span><span style="font-size:10px;color:var(--text-dim)">VIN Step-down</span></div></td>
+          <td>—</td>
+          <td class="note-cell">12V post-fusibile al regolatore</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">P03-C02</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge power">M01-D01</span><span style="font-size:10px;color:var(--text-dim)">VMOT A4988-PAN</span></div></td>
+          <td><span class="pin-badge passive">C1 · 100µF</span></td>
+          <td class="note-cell">12V diretta al driver PAN — cap decoupling tra VMOT e GND</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">P03-C02</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge power">M02-E01</span><span style="font-size:10px;color:var(--text-dim)">VMOT A4988-TILT</span></div></td>
+          <td><span class="pin-badge passive">C2 · 100µF</span></td>
+          <td class="note-cell">12V diretta al driver TILT — cap decoupling tra VMOT e GND</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">P01-A03</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge power">C01-P17</span><span style="font-size:10px;color:var(--text-dim)">USB-C Pi</span></div></td>
+          <td><span class="pin-badge passive">C5 · 1000µF</span></td>
+          <td class="note-cell">5V step-down → Pi via cavo USB-C — cap bulk vicino uscita</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge gnd">P02-B02</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge gnd">P01-A02</span><span class="pin-badge gnd">M01-D02</span><span class="pin-badge gnd">M02-E02</span></div></td>
+          <td>—</td>
+          <td class="note-cell ok">GND comune — tutti i ritorni 12V/5V uniti qui</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- LOGICA Pi → DRIVER -->
+    <div class="section-title" style="font-size:11px; color: var(--accent); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--accent);box-shadow:var(--glow)"></div>
+      DOMINIO 2 — Logica 3.3V — Pi → Driver Stepper
+    </div>
+    <table class="wire-table" style="margin-bottom:28px">
+      <thead><tr><th>Da (Pi GPIO)</th><th></th><th>A (Driver)</th><th>Passivo</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P07</span><span style="font-size:10px;color:var(--text-dim)">GPIO17 PAN STEP</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M01-D05</span><span style="font-size:10px;color:var(--text-dim)">STEP</span></div></td>
+          <td>—</td>
+          <td class="note-cell">Impulsi step PAN</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P08</span><span style="font-size:10px;color:var(--text-dim)">GPIO27 PAN DIR</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M01-D06</span><span style="font-size:10px;color:var(--text-dim)">DIR</span></div></td>
+          <td>—</td>
+          <td class="note-cell">Direzione PAN (HIGH=CW)</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P09</span><span style="font-size:10px;color:var(--text-dim)">GPIO22 PAN EN</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M01-D07</span><span style="font-size:10px;color:var(--text-dim)">EN</span></div></td>
+          <td>—</td>
+          <td class="note-cell warn">EN è active-LOW su A4988 — LOW=abilitato, HIGH=disabilitato</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P10</span><span style="font-size:10px;color:var(--text-dim)">GPIO23 TILT STEP</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M02-E05</span><span style="font-size:10px;color:var(--text-dim)">STEP</span></div></td>
+          <td>—</td>
+          <td class="note-cell">Impulsi step TILT</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P11</span><span style="font-size:10px;color:var(--text-dim)">GPIO24 TILT DIR</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M02-E06</span><span style="font-size:10px;color:var(--text-dim)">DIR</span></div></td>
+          <td>—</td>
+          <td class="note-cell">Direzione TILT</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge signal">C01-P12</span><span style="font-size:10px;color:var(--text-dim)">GPIO25 TILT EN</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M02-E07</span><span style="font-size:10px;color:var(--text-dim)">EN</span></div></td>
+          <td>—</td>
+          <td class="note-cell warn">EN active-LOW — stessa nota PAN</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge power">C01-P20</span><span style="font-size:10px;color:var(--text-dim)">3.3V OUT</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge signal">M01-D03</span><span class="pin-badge signal">M02-E03</span><span style="font-size:10px;color:var(--text-dim)">VDD</span></div></td>
+          <td><span class="pin-badge passive">C3+C4 · 100nF</span></td>
+          <td class="note-cell">3.3V logica per entrambi i driver — cap 100nF tra VDD e GND_L</td>
+        </tr>
+        <tr>
+          <td><div class="wire-from"><span class="pin-badge gnd">C01-P03÷06</span></div></td>
+          <td class="arrow">→</td>
+          <td><div class="wire-to"><span class="pin-badge gnd">M01-D04</span><span class="pin-badge gnd">M02-E04</span></div></td>
+          <td>—</td>
+          <td class="note-cell">GND logica — GND_L driver</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- MOTORI -->
+    <div class="section-title" style="font-size:11px; color: var(--accent3); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--accent3)"></div>
+      Driver → Motori NEMA 17
+    </div>
+    <table class="wire-table" style="margin-bottom:28px">
+      <thead><tr><th>Da (Driver)</th><th></th><th>A (NEMA 17)</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pin-badge passive">M01-D08 · 1A</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N01-F01 · COIL_A+</span></td>
+          <td class="note-cell">Via slip ring canale SR-01</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M01-D09 · 1B</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N01-F02 · COIL_A-</span></td>
+          <td class="note-cell">Via slip ring canale SR-02</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M01-D10 · 2A</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N01-F03 · COIL_B+</span></td>
+          <td class="note-cell">Via slip ring canale SR-03</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M01-D11 · 2B</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N01-F04 · COIL_B-</span></td>
+          <td class="note-cell">Via slip ring canale SR-04</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M02-E08 · 1A</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N02-G01 · COIL_A+</span></td>
+          <td class="note-cell">Via slip ring canale SR-05</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M02-E09 · 1B</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N02-G02 · COIL_A-</span></td>
+          <td class="note-cell">Via slip ring canale SR-06</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M02-E10 · 2A</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N02-G03 · COIL_B+</span></td>
+          <td class="note-cell">Via slip ring canale SR-07</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">M02-E11 · 2B</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge passive">N02-G04 · COIL_B-</span></td>
+          <td class="note-cell">Via slip ring canale SR-08</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ENDSTOP + LED -->
+    <div class="section-title" style="font-size:11px; color: var(--green); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--green)"></div>
+      Endstop + LED Indicatori
+    </div>
+    <table class="wire-table" style="margin-bottom:28px">
+      <thead><tr><th>Da</th><th></th><th>A (Pi GPIO IN)</th><th>Passivo</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pin-badge power">5V (P01-A03)</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">ES1 · COM</span></td>
+          <td><span class="pin-badge passive">R1 · 10kΩ → GND</span></td>
+          <td class="note-cell">Endstop PAN — pull-down 10k su GPIO5 — attivato a 3.3V quando chiuso</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge signal">ES1 · NC/NO</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">C01-P14 · GPIO5</span></td>
+          <td>—</td>
+          <td class="note-cell">Usa pin NC (Normally Closed) per fail-safe</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge power">5V (P01-A03)</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">ES2 · COM</span></td>
+          <td><span class="pin-badge passive">R2 · 10kΩ → GND</span></td>
+          <td class="note-cell">Endstop TILT — stessa configurazione</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge signal">ES2 · NC/NO</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">C01-P15 · GPIO6</span></td>
+          <td>—</td>
+          <td class="note-cell">Via slip ring canale SR-09</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge power">C01-P01 · 5V</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge power">L01-H02 · LED1 Anodo</span></td>
+          <td><span class="pin-badge passive">R3 · 330Ω</span></td>
+          <td class="note-cell">LED rosso 1 — (5V-2V)/330Ω ≈ 9mA OK</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge gnd">GND</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge gnd">L01-H01 · LED1 Catodo</span></td>
+          <td>—</td>
+          <td class="note-cell">Ritorno LED 1</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge power">C01-P01 · 5V</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge power">L02-I01 · LED2 Anodo</span></td>
+          <td><span class="pin-badge passive">R4 · 330Ω</span></td>
+          <td class="note-cell">LED rosso 2 — stesso calcolo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge gnd">GND</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge gnd">L03-I02 · LED2 Catodo</span></td>
+          <td>—</td>
+          <td class="note-cell">Ritorno LED 2</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- AEG -->
+    <div class="section-title" style="font-size:11px; color: var(--green); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--green)"></div>
+      DOMINIO 3 — AEG LiPo 7.4V (isolato) + Servo Grilletto
+    </div>
+    <table class="wire-table" style="margin-bottom:28px">
+      <thead><tr><th>Da</th><th></th><th>A</th><th>Passivo</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pin-badge lipo">A04 · LiPo 7.4V POS</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge lipo">A03 · AEG MOTOR+</span></td>
+          <td><span class="pin-badge passive">F2 · 3A</span> <span class="pin-badge passive">C6 · 100µF</span></td>
+          <td class="note-cell warn">Fusibile 3A + cap 100µF tra + e − per assorbire spike motore brushed</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge lipo">A04 · LiPo 7.4V NEG</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge lipo">A03 · AEG MOTOR−</span></td>
+          <td><span class="pin-badge passive">D1 · 1N5819</span></td>
+          <td class="note-cell warn">Diodo flyback in antiparallelo al motore (anodo su NEG, catodo su POS)</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge signal">C01-P13 · GPIO18 PWM</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">Servo SG90 · Signal</span></td>
+          <td>—</td>
+          <td class="note-cell ok">PWM 50Hz hardware — GPIO18 è l'unico pin HW PWM del Pi disponibile</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge power">C01-P01 · 5V</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge power">Servo SG90 · VCC (filo rosso)</span></td>
+          <td>—</td>
+          <td class="note-cell">5V Pi OK per SG90 a basso carico — MG90S sotto sforzo: alimenta da 5V step-down</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge gnd">C01-P03 · GND</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge gnd">Servo SG90 · GND (filo marrone)</span></td>
+          <td>—</td>
+          <td class="note-cell ok">GND comune servo ← Pi (NON collegare LiPo GND qui)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- CAMERA -->
+    <div class="section-title" style="font-size:11px; color: var(--text-dim); margin-bottom:12px;">
+      <div style="width:3px;height:12px;background:var(--text-dim)"></div>
+      Camera + Storage
+    </div>
+    <table class="wire-table">
+      <thead><tr><th>Da</th><th></th><th>A</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pin-badge signal">C01-P18 · CSI</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge signal">C02-P01 · CSI 22-pin ribbon</span></td>
+          <td class="note-cell">Flat cable CSI 22-pin — connessione diretta Pi 5</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge">C01-P19 · MicroSD</span></td>
+          <td class="arrow">→</td>
+          <td><span class="pin-badge">C03-P01 · SD Slot</span></td>
+          <td class="note-cell">MicroSD 64GB A2 — slot integrato Pi</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SCHEMATICS -->
+<div id="tab-schematics" class="tab-content">
+  <div class="section" style="margin-top:32px">
+    <div class="section-title">Schemi tecnici componenti</div>
+    <div class="schematics-grid">
+
+      <!-- A4988 -->
+      <div class="schematic-card">
+        <div class="schematic-header motor">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">M01 / M02</div>
+              <div class="schematic-name">Driver A4988</div>
+            </div>
+          </div>
+          <span class="schematic-badge motor">STEPPER</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <style>
+                .l { stroke: #1a2a38; stroke-width: 1; }
+                .pw { fill: #ff3a3a; }
+                .gn { fill: #00ff88; }
+                .cy { fill: #00e5ff; }
+                .yw { fill: #ffd600; }
+                .gr { fill: #5a7a8a; }
+                .tx { fill: #c8dde8; font-family: 'Share Tech Mono', monospace; font-size: 9px; }
+                .tx-sm { fill: #5a7a8a; font-family: 'Share Tech Mono', monospace; font-size: 8px; }
+                .tx-h { fill: #fff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
+                .wire { stroke-width: 1.5; fill: none; }
+                .wire-pw { stroke: #ff3a3a; }
+                .wire-gn { stroke: #00ff88; }
+                .wire-cy { stroke: #00e5ff; }
+                .wire-yw { stroke: #ffd600; }
+                .wire-gr { stroke: #5a7a8a; }
+              </style>
+            </defs>
+            <!-- IC body -->
+            <rect x="120" y="60" width="100" height="140" rx="4" fill="#0d1318" stroke="#2a3a4a" stroke-width="1.5"/>
+            <text x="170" y="135" text-anchor="middle" class="tx-h">A4988</text>
+            <text x="170" y="150" text-anchor="middle" class="tx-sm">Pololu/Clone</text>
+
+            <!-- LEFT PINS -->
+            <!-- VMOT -->
+            <rect x="100" y="70" width="20" height="10" rx="2" class="pw" opacity="0.9"/>
+            <text x="98" y="77" text-anchor="end" class="tx">VMOT</text>
+            <line x1="120" y1="75" x2="100" y2="75" class="wire wire-pw"/>
+            <line x1="100" y1="75" x2="60" y2="75" class="wire wire-pw"/>
+            <text x="58" y="72" text-anchor="end" class="tx-sm">12V</text>
+
+            <!-- GND_M -->
+            <rect x="100" y="86" width="20" height="10" rx="2" fill="#333"/>
+            <text x="98" y="93" text-anchor="end" class="tx">GND_M</text>
+            <line x1="100" y1="91" x2="60" y2="91" class="wire wire-gr"/>
+            <text x="58" y="88" text-anchor="end" class="tx-sm">GND</text>
+
+            <!-- VDD -->
+            <rect x="100" y="102" width="20" height="10" rx="2" class="cy" opacity="0.8"/>
+            <text x="98" y="109" text-anchor="end" class="tx">VDD</text>
+            <line x1="100" y1="107" x2="60" y2="107" class="wire wire-cy"/>
+            <text x="58" y="104" text-anchor="end" class="tx-sm">3.3V</text>
+
+            <!-- GND_L -->
+            <rect x="100" y="118" width="20" height="10" rx="2" fill="#333"/>
+            <text x="98" y="125" text-anchor="end" class="tx">GND_L</text>
+            <line x1="100" y1="123" x2="60" y2="123" class="wire wire-gr"/>
+
+            <!-- STEP -->
+            <rect x="100" y="134" width="20" height="10" rx="2" class="gn" opacity="0.8"/>
+            <text x="98" y="141" text-anchor="end" class="tx">STEP</text>
+            <line x1="100" y1="139" x2="60" y2="139" class="wire wire-gn"/>
+            <text x="58" y="136" text-anchor="end" class="tx-sm">GPIO</text>
+
+            <!-- DIR -->
+            <rect x="100" y="150" width="20" height="10" rx="2" class="gn" opacity="0.8"/>
+            <text x="98" y="157" text-anchor="end" class="tx">DIR</text>
+            <line x1="100" y1="155" x2="60" y2="155" class="wire wire-gn"/>
+            <text x="58" y="152" text-anchor="end" class="tx-sm">GPIO</text>
+
+            <!-- EN -->
+            <rect x="100" y="166" width="20" height="10" rx="2" class="yw" opacity="0.8"/>
+            <text x="98" y="173" text-anchor="end" class="tx">EN</text>
+            <line x1="100" y1="171" x2="60" y2="171" class="wire wire-yw"/>
+            <text x="58" y="168" text-anchor="end" class="tx-sm">GPIO</text>
+
+            <!-- RIGHT PINS (motor outputs) -->
+            <!-- 1A -->
+            <rect x="220" y="70" width="20" height="10" rx="2" class="yw" opacity="0.9"/>
+            <text x="242" y="77" class="tx">1A</text>
+            <line x1="220" y1="75" x2="240" y2="75" class="wire wire-yw"/>
+            <line x1="280" y1="75" x2="310" y2="75" class="wire wire-yw"/>
+            <!-- 1B -->
+            <rect x="220" y="86" width="20" height="10" rx="2" class="yw" opacity="0.9"/>
+            <text x="242" y="93" class="tx">1B</text>
+            <line x1="220" y1="91" x2="280" y2="91" class="wire wire-yw"/>
+            <!-- Coil A box -->
+            <rect x="280" y="68" width="30" height="42" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1" opacity="0.8"/>
+            <text x="295" y="84" text-anchor="middle" class="tx-sm" fill="#ffd600">COIL</text>
+            <text x="295" y="96" text-anchor="middle" class="tx-sm" fill="#ffd600">A</text>
+
+            <!-- 2A -->
+            <rect x="220" y="130" width="20" height="10" rx="2" class="cy" opacity="0.9"/>
+            <text x="242" y="137" class="tx">2A</text>
+            <line x1="220" y1="135" x2="280" y2="135" class="wire wire-cy"/>
+            <!-- 2B -->
+            <rect x="220" y="146" width="20" height="10" rx="2" class="cy" opacity="0.9"/>
+            <text x="242" y="153" class="tx">2B</text>
+            <line x1="220" y1="151" x2="280" y2="151" class="wire wire-cy"/>
+            <!-- Coil B box -->
+            <rect x="280" y="128" width="30" height="42" rx="3" fill="#0d1318" stroke="#00e5ff" stroke-width="1" opacity="0.8"/>
+            <text x="295" y="144" text-anchor="middle" class="tx-sm" fill="#00e5ff">COIL</text>
+            <text x="295" y="156" text-anchor="middle" class="tx-sm" fill="#00e5ff">B</text>
+
+            <!-- Capacitor VMOT -->
+            <rect x="38" y="70" width="12" height="22" rx="2" fill="#0d1318" stroke="#ff3a3a" stroke-width="1"/>
+            <text x="44" y="100" text-anchor="middle" class="tx-sm" fill="#ff3a3a">100µF</text>
+            <line x1="44" y1="70" x2="44" y2="60" class="wire wire-pw"/>
+            <line x1="44" y1="92" x2="44" y2="123" class="wire wire-gr"/>
+
+            <!-- MS jumpers -->
+            <text x="170" y="205" text-anchor="middle" class="tx-sm">MS1 MS2 MS3 → tutti HIGH</text>
+            <text x="170" y="218" text-anchor="middle" class="tx-sm" fill="#ffd600">→ 1/16 step = 3200 step/giro</text>
+
+            <!-- Vref note -->
+            <text x="170" y="235" text-anchor="middle" class="tx-sm" fill="#ff3a3a">Vref = Ilim × 8 × Rs</text>
+            <text x="170" y="248" text-anchor="middle" class="tx-sm">Rs=0.1Ω (clone) → Vref≈0.4V x 0.5A</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SERVO GRILLETTO -->
+      <div class="schematic-card">
+        <div class="schematic-header aeg">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">A02 — GRILLETTO</div>
+              <div class="schematic-name">Servo SG90 / MG90S</div>
+            </div>
+          </div>
+          <span class="schematic-badge aeg">PWM</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg">
+            <!-- Servo body -->
+            <rect x="120" y="50" width="100" height="80" rx="5" fill="#0d1318" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="170" y="90" text-anchor="middle" class="tx-h" style="fill:#00ff88">SG90</text>
+            <text x="170" y="106" text-anchor="middle" class="tx-sm">MICRO SERVO</text>
+            <!-- Servo arm -->
+            <rect x="200" y="62" width="40" height="8" rx="3" fill="#00ff88" opacity="0.3"/>
+            <circle cx="240" cy="66" r="4" fill="#00ff88" opacity="0.5"/>
+            <text x="245" y="60" class="tx-sm" fill="#00ff88">BRACCIO</text>
+            <text x="245" y="72" class="tx-sm" fill="#00ff88">grilletto</text>
+
+            <!-- 3 wires -->
+            <!-- Brown GND -->
+            <line x1="120" y1="68" x2="40" y2="68" class="wire" style="stroke:#8b4513; stroke-width:2"/>
+            <text x="38" y="65" text-anchor="end" class="tx">GND</text>
+            <text x="38" y="76" text-anchor="end" class="tx-sm">Pi GND</text>
+
+            <!-- Red VCC -->
+            <line x1="120" y1="83" x2="40" y2="83" class="wire wire-pw" style="stroke-width:2"/>
+            <text x="38" y="80" text-anchor="end" class="tx">5V VCC</text>
+            <text x="38" y="91" text-anchor="end" class="tx-sm">Pi pin 2/4</text>
+
+            <!-- Orange/yellow signal -->
+            <line x1="120" y1="98" x2="40" y2="98" class="wire wire-gn" style="stroke-width:2"/>
+            <text x="38" y="95" text-anchor="end" class="tx">SIGNAL</text>
+            <text x="38" y="106" text-anchor="end" class="tx-sm">GPIO18 PWM</text>
+
+            <!-- PWM diagram -->
+            <text x="170" y="155" text-anchor="middle" class="tx-sm" fill="#00ff88">50 Hz — periodo 20ms</text>
+            <!-- PWM wave -->
+            <polyline points="80,175 80,162 95,162 95,175 150,175 150,162 165,162 165,175 220,175 220,162 235,162 235,175 290,175" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.7"/>
+            <text x="87" y="158" class="tx-sm" fill="#ffd600">1ms=0°</text>
+            <text x="152" y="158" class="tx-sm" fill="#ff3a3a">2ms=90°</text>
+            <text x="80" y="190" class="tx-sm">RILASCIATO</text>
+            <text x="210" y="190" text-anchor="end" class="tx-sm" fill="#ff3a3a">SPARATO</text>
+            <text x="170" y="208" text-anchor="middle" class="tx-sm">duty: 5% → 10% (librpigpio / RPi.GPIO)</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- AEG CIRCUIT -->
+      <div class="schematic-card">
+        <div class="schematic-header aeg">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">A03 + A04</div>
+              <div class="schematic-name">Motore AEG + LiPo 7.4V</div>
+            </div>
+          </div>
+          <span class="schematic-badge aeg">ISOLATO</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg">
+            <!-- Battery -->
+            <rect x="20" y="80" width="60" height="50" rx="4" fill="#0d1318" stroke="#ff8c00" stroke-width="1.5"/>
+            <text x="50" y="101" text-anchor="middle" class="tx-sm" fill="#ff8c00">LiPo</text>
+            <text x="50" y="114" text-anchor="middle" class="tx-sm" fill="#ff8c00">7.4V 20C</text>
+            <text x="50" y="124" text-anchor="middle" class="tx-sm">2S pack</text>
+            <!-- Battery terminals -->
+            <line x1="80" y1="90" x2="110" y2="90" class="wire wire-pw"/>
+            <line x1="80" y1="120" x2="110" y2="120" class="wire wire-gr"/>
+            <text x="85" y="86" class="tx-sm" fill="#ff3a3a">+</text>
+            <text x="85" y="135" class="tx-sm">−</text>
+
+            <!-- Fuse -->
+            <rect x="110" y="84" width="20" height="12" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="120" y="78" text-anchor="middle" class="tx-sm" fill="#ffd600">3A</text>
+            <line x1="130" y1="90" x2="160" y2="90" class="wire wire-pw"/>
+
+            <!-- Cap -->
+            <rect x="154" y="80" width="8" height="40" rx="2" fill="#0d1318" stroke="#ff8c00" stroke-width="1"/>
+            <text x="158" y="130" text-anchor="middle" class="tx-sm" fill="#ff8c00">100µ</text>
+            <line x1="158" y1="80" x2="158" y2="90" class="wire wire-pw"/>
+            <line x1="158" y1="120" x2="158" y2="120" class="wire wire-gr"/>
+            <line x1="158" y1="120" x2="110" y2="120" class="wire wire-gr"/>
+
+            <!-- Motor -->
+            <circle cx="240" cy="105" r="35" fill="#0d1318" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="240" y="100" text-anchor="middle" class="tx-sm" fill="#00ff88">MOTOR</text>
+            <text x="240" y="113" text-anchor="middle" class="tx-sm">AEG</text>
+            <text x="240" y="124" text-anchor="middle" class="tx-sm">HiTorque</text>
+            <!-- Motor terminals -->
+            <line x1="160" y1="90" x2="205" y2="90" class="wire wire-pw"/>
+            <line x1="110" y1="120" x2="205" y2="120" class="wire wire-gr"/>
+
+            <!-- Flyback diode -->
+            <text x="240" y="60" text-anchor="middle" class="tx-sm" fill="#ffd600">1N5819</text>
+            <text x="240" y="70" text-anchor="middle" class="tx-sm" fill="#ffd600">flyback ↕</text>
+            <line x1="240" y1="70" x2="240" y2="75" class="wire wire-yw" style="stroke-dasharray:3,2"/>
+
+            <!-- Pi isolation note -->
+            <rect x="20" y="165" width="300" height="40" rx="4" fill="rgba(0,255,136,0.04)" stroke="rgba(0,255,136,0.2)" stroke-width="1"/>
+            <text x="170" y="181" text-anchor="middle" class="tx-sm" fill="#00ff88">⚡ GND LiPo NON connesso al GND Pi</text>
+            <text x="170" y="196" text-anchor="middle" class="tx-sm">Isolamento galvanico completo — il Pi controlla solo il servo</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ALIMENTAZIONE -->
+      <div class="schematic-card">
+        <div class="schematic-header power">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">P01 + P02 + P03</div>
+              <div class="schematic-name">Alimentazione Principale</div>
+            </div>
+          </div>
+          <span class="schematic-badge power">12V → 5V</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- LiFePO4 -->
+            <rect x="10" y="60" width="55" height="50" rx="4" fill="#0d1318" stroke="#ff3a3a" stroke-width="1.5"/>
+            <text x="37" y="81" text-anchor="middle" class="tx-sm" fill="#ff3a3a">LiFePO4</text>
+            <text x="37" y="93" text-anchor="middle" class="tx-sm">12V 5Ah</text>
+            <text x="37" y="104" text-anchor="middle" class="tx-sm">XT60</text>
+
+            <!-- Fuse -->
+            <rect x="75" y="72" width="18" height="12" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="84" y="80" text-anchor="middle" class="tx-sm" fill="#ffd600">F</text>
+            <text x="84" y="93" text-anchor="middle" class="tx-sm" fill="#ffd600">10A</text>
+            <line x1="65" y1="78" x2="75" y2="78" class="wire wire-pw"/>
+            <line x1="93" y1="78" x2="115" y2="78" class="wire wire-pw"/>
+
+            <!-- Step-down -->
+            <rect x="115" y="60" width="70" height="50" rx="4" fill="#0d1318" stroke="#ffd600" stroke-width="1.5"/>
+            <text x="150" y="82" text-anchor="middle" class="tx-sm" fill="#ffd600">STEP-DOWN</text>
+            <text x="150" y="94" text-anchor="middle" class="tx-sm">12V→5V 5A</text>
+            <text x="150" y="105" text-anchor="middle" class="tx-sm">DC-DC</text>
+            <line x1="65" y1="100" x2="115" y2="100" class="wire wire-gr"/>
+
+            <!-- 5V out -->
+            <line x1="185" y1="78" x2="215" y2="78" class="wire wire-pw"/>
+            <line x1="185" y1="100" x2="215" y2="100" class="wire wire-gr"/>
+
+            <!-- Cap C5 -->
+            <rect x="209" y="68" width="8" height="42" rx="2" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="213" y="118" text-anchor="middle" class="tx-sm" fill="#ffd600">1000µ</text>
+            <line x1="213" y1="68" x2="213" y2="78" class="wire wire-pw"/>
+            <line x1="213" y1="110" x2="213" y2="100" class="wire wire-gr"/>
+
+            <!-- Pi -->
+            <rect x="250" y="55" width="80" height="30" rx="4" fill="#0d1318" stroke="#00e5ff" stroke-width="1"/>
+            <text x="290" y="68" text-anchor="middle" class="tx-sm" fill="#00e5ff">Pi 5</text>
+            <text x="290" y="80" text-anchor="middle" class="tx-sm">USB-C 5V</text>
+            <line x1="217" y1="78" x2="250" y2="70" class="wire wire-pw"/>
+            <line x1="217" y1="100" x2="250" y2="85" class="wire wire-gr"/>
+
+            <!-- 12V split -->
+            <line x1="93" y1="78" x2="93" y2="130" class="wire wire-pw" style="stroke-dasharray:4,2"/>
+            <rect x="250" y="118" width="80" height="30" rx="4" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="290" y="131" text-anchor="middle" class="tx-sm" fill="#ffd600">A4988 × 2</text>
+            <text x="290" y="143" text-anchor="middle" class="tx-sm">VMOT 12V</text>
+            <line x1="93" y1="130" x2="250" y2="133" class="wire wire-pw"/>
+
+            <text x="170" y="168" text-anchor="middle" class="tx-sm" fill="#5a7a8a">12V diretta ai driver (non passa dallo step-down)</text>
+            <text x="170" y="182" text-anchor="middle" class="tx-sm" fill="#5a7a8a">GND comune unico per tutto il sistema 12V/5V</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ENDSTOP -->
+      <div class="schematic-card">
+        <div class="schematic-header">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">ES1 / ES2</div>
+              <div class="schematic-name">Endstop + Pull-down</div>
+            </div>
+          </div>
+          <span class="schematic-badge">GPIO IN</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+            <!-- 3.3V -->
+            <text x="20" y="55" class="tx-sm" fill="#ff3a3a">3.3V / 5V</text>
+            <line x1="20" y1="60" x2="140" y2="60" class="wire wire-pw"/>
+
+            <!-- Switch -->
+            <circle cx="150" cy="60" r="4" fill="#00e5ff"/>
+            <circle cx="190" cy="60" r="4" fill="#00e5ff"/>
+            <line x1="150" y1="60" x2="185" y2="45" stroke="#00e5ff" stroke-width="1.5"/>
+            <text x="168" y="40" text-anchor="middle" class="tx-sm" fill="#00e5ff">NC switch</text>
+            <text x="168" y="80" text-anchor="middle" class="tx-sm">(Normally Closed)</text>
+            <line x1="190" y1="60" x2="280" y2="60" class="wire wire-cy"/>
+
+            <!-- GPIO -->
+            <rect x="280" y="50" width="50" height="20" rx="3" fill="#0d1318" stroke="#00e5ff" stroke-width="1"/>
+            <text x="305" y="63" text-anchor="middle" class="tx-sm" fill="#00e5ff">GPIO</text>
+
+            <!-- Pull-down -->
+            <line x1="240" y1="60" x2="240" y2="90" class="wire wire-cy"/>
+            <rect x="228" y="90" width="24" height="35" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="240" y="112" text-anchor="middle" class="tx-sm" fill="#ffd600">10kΩ</text>
+            <text x="240" y="133" text-anchor="middle" class="tx-sm" fill="#ffd600">R1/R2</text>
+            <line x1="240" y1="125" x2="240" y2="150" class="wire wire-gr"/>
+            <line x1="140" y1="150" x2="280" y2="150" class="wire wire-gr"/>
+            <text x="80" y="153" class="tx-sm">GND</text>
+            <line x1="20" y1="150" x2="140" y2="150" class="wire wire-gr"/>
+
+            <text x="170" y="168" text-anchor="middle" class="tx-sm">NC = sicuro: rottura cavo → Pi legge LOW → stop</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- LED -->
+      <div class="schematic-card">
+        <div class="schematic-header">
+          <div class="schematic-header-left">
+            <div>
+              <div class="schematic-id">L01 / L02</div>
+              <div class="schematic-name">LED Indicatori Rossi</div>
+            </div>
+          </div>
+          <span class="schematic-badge">5V INDICATOR</span>
+        </div>
+        <div class="schematic-body">
+          <svg class="diagram" viewBox="0 0 340 160" xmlns="http://www.w3.org/2000/svg">
+            <!-- 5V -->
+            <text x="20" y="68" class="tx-sm" fill="#ff3a3a">5V Pi</text>
+            <line x1="20" y1="75" x2="80" y2="75" class="wire wire-pw"/>
+
+            <!-- R3 -->
+            <rect x="80" y="67" width="35" height="16" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1"/>
+            <text x="97" y="79" text-anchor="middle" class="tx-sm" fill="#ffd600">330Ω</text>
+            <line x1="115" y1="75" x2="155" y2="75" class="wire wire-pw"/>
+
+            <!-- LED1 -->
+            <polygon points="155,65 155,85 175,75" fill="#ff3a3a" opacity="0.7"/>
+            <line x1="175" y1="65" x2="175" y2="85" stroke="#ff3a3a" stroke-width="1.5"/>
+            <line x1="175" y1="75" x2="220" y2="75" class="wire wire-gr"/>
+            <!-- Light rays -->
+            <line x1="180" y1="60" x2="190" y2="52" stroke="#ff3a3a" stroke-width="1" opacity="0.5"/>
+            <line x1="185" y1="65" x2="198" y2="60" stroke="#ff3a3a" stroke-width="1" opacity="0.5"/>
+
+            <!-- GND -->
+            <text x="240" y="78" class="tx-sm">GND</text>
+            <line x1="220" y1="75" x2="260" y2="75" class="wire wire-gr"/>
+
+            <!-- Formula -->
+            <text x="170" y="110" text-anchor="middle" class="tx-sm" fill="#5a7a8a">(5V - 2V) / 330Ω ≈ 9 mA</text>
+            <text x="170" y="124" text-anchor="middle" class="tx-sm" fill="#5a7a8a">LED tipico: If = 5-20mA ✓</text>
+
+            <!-- LED2 (dashed) -->
+            <line x1="20" y1="140" x2="80" y2="140" class="wire wire-pw" style="stroke-dasharray:4,2"/>
+            <rect x="80" y="132" width="35" height="16" rx="3" fill="#0d1318" stroke="#ffd600" stroke-width="1" opacity="0.6"/>
+            <text x="97" y="144" text-anchor="middle" class="tx-sm" fill="#ffd600">330Ω</text>
+            <line x1="115" y1="140" x2="155" y2="140" class="wire wire-pw" style="stroke-dasharray:4,2"/>
+            <polygon points="155,130 155,150 175,140" fill="#ff3a3a" opacity="0.4"/>
+            <line x1="175" y1="130" x2="175" y2="150" stroke="#ff3a3a" stroke-width="1" opacity="0.6"/>
+            <line x1="175" y1="140" x2="260" y2="140" class="wire wire-gr" style="stroke-dasharray:4,2"/>
+            <text x="170" y="158" text-anchor="middle" class="tx-sm" fill="#5a7a8a">LED 2 — collegamento identico</text>
+          </svg>
+        </div>
+      </div>
+
+    </div><!-- end schematics-grid -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIP RING -->
+<div id="tab-slipring" class="tab-content">
+  <div class="section" style="margin-top:32px">
+    <div class="section-title">Slip Ring 12 canali — Allocazione</div>
+
+    <div class="alert">
+      <div class="alert-icon">ℹ</div>
+      <div class="alert-text">
+        Lo slip ring N03 (12 canali, 2A/canale) passa tutti i segnali dalla parte fissa (base) alla parte rotante (torretta).<br>
+        I canali per i motori stepper passano solo dal basso verso l'alto (driver nella base → NEMA 17 sulla torretta).<br>
+        <strong>NEMA 17 PAN è nella BASE</strong> e non passa per lo slip ring. Solo TILT e segnali digitali passano attraverso.
+      </div>
+    </div>
+
+    <table class="wire-table">
+      <thead>
+        <tr>
+          <th>Canale</th>
+          <th>Pin ID</th>
+          <th>Segnale</th>
+          <th>Tipo</th>
+          <th>Da (base fissa)</th>
+          <th>A (torretta rotante)</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pin-badge passive">SR-01</span></td>
+          <td><span class="pin-badge">N03-P01</span></td>
+          <td>TILT COIL A+</td>
+          <td><span style="color:var(--accent3)">MOTOR</span></td>
+          <td><span class="pin-badge passive">M02-E08 · 1A</span></td>
+          <td><span class="pin-badge passive">N02-G01</span></td>
+          <td class="note-cell">Avvolgimento A TILT positivo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-02</span></td>
+          <td><span class="pin-badge">N03-P02</span></td>
+          <td>TILT COIL A−</td>
+          <td><span style="color:var(--accent3)">MOTOR</span></td>
+          <td><span class="pin-badge passive">M02-E09 · 1B</span></td>
+          <td><span class="pin-badge passive">N02-G02</span></td>
+          <td class="note-cell">Avvolgimento A TILT negativo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-03</span></td>
+          <td><span class="pin-badge">N03-P03</span></td>
+          <td>TILT COIL B+</td>
+          <td><span style="color:var(--accent3)">MOTOR</span></td>
+          <td><span class="pin-badge passive">M02-E10 · 2A</span></td>
+          <td><span class="pin-badge passive">N02-G03</span></td>
+          <td class="note-cell">Avvolgimento B TILT positivo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-04</span></td>
+          <td><span class="pin-badge">N03-P04</span></td>
+          <td>TILT COIL B−</td>
+          <td><span style="color:var(--accent3)">MOTOR</span></td>
+          <td><span class="pin-badge passive">M02-E11 · 2B</span></td>
+          <td><span class="pin-badge passive">N02-G04</span></td>
+          <td class="note-cell">Avvolgimento B TILT negativo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-05</span></td>
+          <td><span class="pin-badge">N03-P05</span></td>
+          <td>ENDSTOP TILT</td>
+          <td><span style="color:var(--green)">SIGNAL</span></td>
+          <td><span class="pin-badge signal">C01-P15 · GPIO6</span></td>
+          <td><span class="pin-badge signal">ES2</span></td>
+          <td class="note-cell">Fine corsa TILT sul modulo rotante</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-06</span></td>
+          <td><span class="pin-badge">N03-P06</span></td>
+          <td>SERVO SIGNAL</td>
+          <td><span style="color:var(--green)">PWM</span></td>
+          <td><span class="pin-badge signal">C01-P13 · GPIO18</span></td>
+          <td><span class="pin-badge signal">Servo SG90</span></td>
+          <td class="note-cell">PWM 50Hz grilletto — sulla parte rotante</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-07</span></td>
+          <td><span class="pin-badge">N03-P07</span></td>
+          <td>5V SERVO VCC</td>
+          <td><span style="color:var(--accent2)">POWER</span></td>
+          <td><span class="pin-badge power">P01-A03 · 5V</span></td>
+          <td><span class="pin-badge power">Servo VCC</span></td>
+          <td class="note-cell">Alimentazione servo sulla torretta</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-08</span></td>
+          <td><span class="pin-badge">N03-P08</span></td>
+          <td>GND LOGICA</td>
+          <td><span style="color:var(--text-dim)">GND</span></td>
+          <td><span class="pin-badge gnd">Pi GND</span></td>
+          <td><span class="pin-badge gnd">Servo GND + ES2</span></td>
+          <td class="note-cell">GND comune logica/servo</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-09</span></td>
+          <td><span class="pin-badge">N03-P09</span></td>
+          <td>LED 1</td>
+          <td><span style="color:var(--accent2)">LED</span></td>
+          <td><span class="pin-badge power">5V + R3</span></td>
+          <td><span class="pin-badge power">L01-H02</span></td>
+          <td class="note-cell">LED rosso 1 sulla torretta</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-10</span></td>
+          <td><span class="pin-badge">N03-P10</span></td>
+          <td>LED 2</td>
+          <td><span style="color:var(--accent2)">LED</span></td>
+          <td><span class="pin-badge power">5V + R4</span></td>
+          <td><span class="pin-badge power">L02-I01</span></td>
+          <td class="note-cell">LED rosso 2 sulla torretta</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-11</span></td>
+          <td><span class="pin-badge">N03-P11</span></td>
+          <td>GND LED</td>
+          <td><span style="color:var(--text-dim)">GND</span></td>
+          <td><span class="pin-badge gnd">GND</span></td>
+          <td><span class="pin-badge gnd">LED catodi</span></td>
+          <td class="note-cell">Ritorno LED</td>
+        </tr>
+        <tr>
+          <td><span class="pin-badge passive">SR-12</span></td>
+          <td><span class="pin-badge">N03-P12</span></td>
+          <td>SPARE</td>
+          <td><span style="color:var(--text-dim)">FREE</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td class="note-cell ok">Canale libero — futuro (buzzer, sensore IR, ecc.)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:16px; font-family:var(--mono); font-size:11px; color:var(--text-dim); line-height:2;">
+      <span style="color:var(--accent3)">★ NOTA IMPORTANTE:</span> Il NEMA17 PAN (N01) ruota la torretta intera e si trova nella BASE — i suoi cavi non passano per lo slip ring.<br>
+      I cavi del motore PAN vanno direttamente da M01 → N01 senza anello rotante.<br>
+      Lo slip ring è coassiale all'asse PAN e trasporta solo i segnali della parte superiore rotante.
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <div>NEMESIS v2.2 — <span>Documentazione Tecnica</span> — Giorgio · Salerno, IT</div>
+  <div style="font-size:10px">GPIO18=SERVO · GPIO17/27/22=PAN · GPIO23/24/25=TILT · GPIO5/6=ES · <span>LiPo AEG ISOLATA</span></div>
+</footer>
+
+<script>
+  function showTab(id, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    el.classList.add('active');
+    return false;
+  }
+
+  // Smooth load animation
+  document.querySelectorAll('.schematic-card, .comp-card, .wire-table tr').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    el.style.transition = `opacity 0.3s ${i * 0.02}s, transform 0.3s ${i * 0.02}s`;
+    setTimeout(() => { el.style.opacity = ''; el.style.transform = ''; }, 50);
+  });
+</script>
+</body>
+</html>
